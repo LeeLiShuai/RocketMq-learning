@@ -78,33 +78,35 @@ public class NamesrvStartup {
             System.exit(-1);
             return null;
         }
-
+        //nameserver配置文件
         final NamesrvConfig namesrvConfig = new NamesrvConfig();
+        //netty配置文件
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
+        //netty监听9876端口
         nettyServerConfig.setListenPort(9876);
+        //从文件里读取配置
         if (commandLine.hasOption('c')) {
             String file = commandLine.getOptionValue('c');
             if (file != null) {
                 InputStream in = new BufferedInputStream(new FileInputStream(file));
                 properties = new Properties();
                 properties.load(in);
+                //反射设置属性
                 MixAll.properties2Object(properties, namesrvConfig);
                 MixAll.properties2Object(properties, nettyServerConfig);
-
                 namesrvConfig.setConfigStorePath(file);
-
                 System.out.printf("load config properties file OK, %s%n", file);
                 in.close();
             }
         }
-
+        //打印配置
         if (commandLine.hasOption('p')) {
             InternalLogger console = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_CONSOLE_NAME);
             MixAll.printObjectProperties(console, namesrvConfig);
             MixAll.printObjectProperties(console, nettyServerConfig);
             System.exit(0);
         }
-
+        //命令行设置属性
         MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
 
         if (null == namesrvConfig.getRocketmqHome()) {
@@ -117,17 +119,14 @@ public class NamesrvStartup {
         configurator.setContext(lc);
         lc.reset();
         configurator.doConfigure(namesrvConfig.getRocketmqHome() + "/conf/logback_namesrv.xml");
-
         log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
-
+        //打印配置到log文件
         MixAll.printObjectProperties(log, namesrvConfig);
         MixAll.printObjectProperties(log, nettyServerConfig);
-
+        //新建NamesrvController对象
         final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
-
         // remember all configs to prevent discard
         controller.getConfiguration().registerConfig(properties);
-
         return controller;
     }
 
@@ -142,7 +141,7 @@ public class NamesrvStartup {
             controller.shutdown();
             System.exit(-3);
         }
-
+        //关闭时同时关闭NamesrvController
         Runtime.getRuntime().addShutdownHook(new ShutdownHookThread(log, new Callable<Void>() {
             @Override
             public Void call() throws Exception {
@@ -160,6 +159,11 @@ public class NamesrvStartup {
         controller.shutdown();
     }
 
+    /**
+     * 读取命令行数据
+     * @param options
+     * @return
+     */
     public static Options buildCommandlineOptions(final Options options) {
         Option opt = new Option("c", "configFile", true, "Name server config properties file");
         opt.setRequired(false);

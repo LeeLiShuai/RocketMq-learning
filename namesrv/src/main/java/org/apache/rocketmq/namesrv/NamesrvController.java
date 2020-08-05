@@ -74,26 +74,24 @@ public class NamesrvController {
     }
 
     public boolean initialize() {
-
+        //从文件中读取配置
         this.kvConfigManager.load();
-
+        //构建NettyRemotingServer对象，一个Netty网络服务器
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
-
+        //netty服务器工作线程池
         this.remotingExecutor =
             Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
-
+        //工作线程池交给netty管理
         this.registerProcessor();
-
+        //定时任务检测没有发送心跳包的broker，延迟5秒执行，10秒执行一次
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-
             @Override
             public void run() {
                 NamesrvController.this.routeInfoManager.scanNotActiveBroker();
             }
         }, 5, 10, TimeUnit.SECONDS);
-
+        //打印kv配置，1秒延迟执行，10秒执行一次
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-
             @Override
             public void run() {
                 NamesrvController.this.kvConfigManager.printAllPeriodically();
@@ -143,18 +141,16 @@ public class NamesrvController {
 
     private void registerProcessor() {
         if (namesrvConfig.isClusterTest()) {
-
             this.remotingServer.registerDefaultProcessor(new ClusterTestRequestProcessor(this, namesrvConfig.getProductEnvName()),
                 this.remotingExecutor);
         } else {
-
             this.remotingServer.registerDefaultProcessor(new DefaultRequestProcessor(this), this.remotingExecutor);
         }
     }
 
-    public void start() throws Exception {
+    public void start() {
+        //启动netty
         this.remotingServer.start();
-
         if (this.fileWatchService != null) {
             this.fileWatchService.start();
         }

@@ -325,6 +325,7 @@ public class MixAll {
     }
 
     public static void properties2Object(final Properties p, final Object object) {
+        //反射获取所有方法
         Method[] methods = object.getClass().getMethods();
         for (Method method : methods) {
             String mn = method.getName();
@@ -332,9 +333,11 @@ public class MixAll {
                 try {
                     String tmp = mn.substring(4);
                     String first = mn.substring(3, 4);
-
+                    //根据set方法获取属性
                     String key = first.toLowerCase() + tmp;
+                    //从配置中获取对应属性
                     String property = p.getProperty(key);
+                    //设置属性
                     if (property != null) {
                         Class<?>[] pt = method.getParameterTypes();
                         if (pt != null && pt.length > 0) {

@@ -519,6 +519,7 @@ public class RouteInfoManager {
             try {
                 try {
                     this.lock.readLock().lockInterruptibly();
+                    //遍历所有的存活broker，根据channel获取对应的broker地址
                     Iterator<Entry<String, BrokerLiveInfo>> itBrokerLiveTable =
                         this.brokerLiveTable.entrySet().iterator();
                     while (itBrokerLiveTable.hasNext()) {
@@ -535,7 +536,7 @@ public class RouteInfoManager {
                 log.error("onChannelDestroy Exception", e);
             }
         }
-
+        //没获取到就用传入的地址
         if (null == brokerAddrFound) {
             brokerAddrFound = remoteAddr;
         } else {
@@ -543,7 +544,7 @@ public class RouteInfoManager {
         }
 
         if (brokerAddrFound != null && brokerAddrFound.length() > 0) {
-
+            //移除所有相关信息，存活的broker，filter
             try {
                 try {
                     this.lock.writeLock().lockInterruptibly();
