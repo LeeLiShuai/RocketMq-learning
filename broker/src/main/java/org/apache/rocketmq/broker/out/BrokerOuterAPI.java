@@ -111,6 +111,20 @@ public class BrokerOuterAPI {
         this.remotingClient.updateNameServerAddressList(lst);
     }
 
+    /**
+     * 向所有nameServer注册
+     * @param clusterName  集群名称
+     * @param brokerAddr   broker地址
+     * @param brokerName   broker名称
+     * @param brokerId     broker地址
+     * @param haServerAddr  HA地址
+     * @param topicConfigWrapper topic配置
+     * @param filterServerList  filter列表
+     * @param oneway
+     * @param timeoutMills   超时时间
+     * @param compressed
+     * @return
+     */
     public List<RegisterBrokerResult> registerBrokerAll(
         final String clusterName,
         final String brokerAddr,
@@ -122,11 +136,12 @@ public class BrokerOuterAPI {
         final boolean oneway,
         final int timeoutMills,
         final boolean compressed) {
-
+        //注册结果
         final List<RegisterBrokerResult> registerBrokerResultList = Lists.newArrayList();
+        //所有nameServer的地址
         List<String> nameServerAddressList = this.remotingClient.getNameServerAddressList();
         if (nameServerAddressList != null && nameServerAddressList.size() > 0) {
-
+            //请求头，存放broker信息
             final RegisterBrokerRequestHeader requestHeader = new RegisterBrokerRequestHeader();
             requestHeader.setBrokerAddr(brokerAddr);
             requestHeader.setBrokerId(brokerId);
@@ -134,13 +149,14 @@ public class BrokerOuterAPI {
             requestHeader.setClusterName(clusterName);
             requestHeader.setHaServerAddr(haServerAddr);
             requestHeader.setCompressed(compressed);
-
+            //请求体，存放filter，topic配置
             RegisterBrokerBody requestBody = new RegisterBrokerBody();
             requestBody.setTopicConfigSerializeWrapper(topicConfigWrapper);
             requestBody.setFilterServerList(filterServerList);
             final byte[] body = requestBody.encode(compressed);
             final int bodyCrc32 = UtilAll.crc32(body);
             requestHeader.setBodyCrc32(bodyCrc32);
+            //countDownLatch，等所有都注册完再向下执行
             final CountDownLatch countDownLatch = new CountDownLatch(nameServerAddressList.size());
             for (final String namesrvAddr : nameServerAddressList) {
                 brokerOuterExecutor.execute(new Runnable() {
@@ -171,6 +187,21 @@ public class BrokerOuterAPI {
         return registerBrokerResultList;
     }
 
+    /**
+     * 向某一个nameServer注册broker
+     * @param namesrvAddr  nameServer地址
+     * @param oneway
+     * @param timeoutMills  超时时间
+     * @param requestHeader  请求头
+     * @param body  请求体
+     * @return
+     * @throws RemotingCommandException
+     * @throws MQBrokerException
+     * @throws RemotingConnectException
+     * @throws RemotingSendRequestException
+     * @throws RemotingTimeoutException
+     * @throws InterruptedException
+     */
     private RegisterBrokerResult registerBroker(
         final String namesrvAddr,
         final boolean oneway,
@@ -179,9 +210,10 @@ public class BrokerOuterAPI {
         final byte[] body
     ) throws RemotingCommandException, MQBrokerException, RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException,
         InterruptedException {
+        //请求头和请求体封装成一个请求
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.REGISTER_BROKER, requestHeader);
         request.setBody(body);
-
+        //TODO
         if (oneway) {
             try {
                 this.remotingClient.invokeOneway(namesrvAddr, request, timeoutMills);
@@ -190,10 +222,11 @@ public class BrokerOuterAPI {
             }
             return null;
         }
-
+        //同步执行，发送注册请求
         RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, timeoutMills);
         assert response != null;
         switch (response.getCode()) {
+            //注册成功，返回注册结果，包含master地址，HA地址，kvTable
             case ResponseCode.SUCCESS: {
                 RegisterBrokerResponseHeader responseHeader =
                     (RegisterBrokerResponseHeader) response.decodeCommandCustomHeader(RegisterBrokerResponseHeader.class);
