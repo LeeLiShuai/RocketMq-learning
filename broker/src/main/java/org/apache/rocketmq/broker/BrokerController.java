@@ -899,7 +899,7 @@ public class BrokerController {
             handleSlaveSynchronize(messageStoreConfig.getBrokerRole());
             this.registerBrokerAll(true, false, true);
         }
-        //将broker注册到所有nameServer，10秒延迟，60秒执行一次
+        //将broker注册到所有nameServer，10秒延迟，30秒(brokerConfig默认)执行一次
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
