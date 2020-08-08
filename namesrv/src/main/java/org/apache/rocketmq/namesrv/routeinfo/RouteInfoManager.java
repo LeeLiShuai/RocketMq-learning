@@ -179,7 +179,7 @@ public class RouteInfoManager {
                 //将此节点加入自己的brokerAddrsMap中
                 String oldAddr = brokerData.getBrokerAddrs().put(brokerId, brokerAddr);
                 registerFirst = registerFirst || (null == oldAddr);
-                //topicConfig不为空，切brokerId为0
+                //topicConfig不为空，且brokerId为0
                 if (null != topicConfigWrapper
                     && MixAll.MASTER_ID == brokerId) {
                     //如果节点的topic配置变了，或者第一次注册

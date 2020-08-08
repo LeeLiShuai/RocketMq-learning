@@ -140,6 +140,7 @@ public class NamesrvController {
     }
 
     private void registerProcessor() {
+        //测试集群
         if (namesrvConfig.isClusterTest()) {
             this.remotingServer.registerDefaultProcessor(new ClusterTestRequestProcessor(this, namesrvConfig.getProductEnvName()),
                 this.remotingExecutor);
