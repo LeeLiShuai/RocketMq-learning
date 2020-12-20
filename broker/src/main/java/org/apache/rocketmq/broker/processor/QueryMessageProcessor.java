@@ -39,6 +39,9 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.store.QueryMessageResult;
 import org.apache.rocketmq.store.SelectMappedBufferResult;
 
+/**
+ * 处理查询消息的请求，用于控制台查询消息。调用store模块的方法
+ */
 public class QueryMessageProcessor extends AsyncNettyRequestProcessor implements NettyRequestProcessor {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
@@ -52,8 +55,10 @@ public class QueryMessageProcessor extends AsyncNettyRequestProcessor implements
     public RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request)
         throws RemotingCommandException {
         switch (request.getCode()) {
+            //查询消息
             case RequestCode.QUERY_MESSAGE:
                 return this.queryMessage(ctx, request);
+            //根据ID查询消息
             case RequestCode.VIEW_MESSAGE_BY_ID:
                 return this.viewMessageById(ctx, request);
             default:
@@ -68,6 +73,13 @@ public class QueryMessageProcessor extends AsyncNettyRequestProcessor implements
         return false;
     }
 
+    /**
+     * 查询消息
+     * @param ctx
+     * @param request
+     * @return
+     * @throws RemotingCommandException
+     */
     public RemotingCommand queryMessage(ChannelHandlerContext ctx, RemotingCommand request)
         throws RemotingCommandException {
         final RemotingCommand response =
@@ -84,7 +96,7 @@ public class QueryMessageProcessor extends AsyncNettyRequestProcessor implements
         if (isUniqueKey != null && isUniqueKey.equals("true")) {
             requestHeader.setMaxNum(this.brokerController.getMessageStoreConfig().getDefaultQueryMaxNum());
         }
-
+        //从消息模块查询
         final QueryMessageResult queryMessageResult =
             this.brokerController.getMessageStore().queryMessage(requestHeader.getTopic(),
                 requestHeader.getKey(), requestHeader.getMaxNum(), requestHeader.getBeginTimestamp(),

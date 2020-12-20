@@ -24,15 +24,33 @@ import org.apache.rocketmq.remoting.CommandCustomHeader;
 import org.apache.rocketmq.remoting.annotation.CFNotNull;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 
+/**
+ * 查询消息的请求头
+ */
 public class QueryMessageRequestHeader implements CommandCustomHeader {
+    /**
+     * 所属topic
+     */
     @CFNotNull
     private String topic;
+    /**
+     * messageKey
+     */
     @CFNotNull
     private String key;
+    /**
+     * 最大数量
+     */
     @CFNotNull
     private Integer maxNum;
+    /**
+     * 时间区间
+     */
     @CFNotNull
     private Long beginTimestamp;
+    /**
+     * 时间区间
+     */
     @CFNotNull
     private Long endTimestamp;
 

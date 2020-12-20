@@ -122,6 +122,12 @@ public class ConsumerManager {
         return r1 || r2;
     }
 
+    /**
+     * 注销消费者
+     * @param group
+     * @param clientChannelInfo
+     * @param isNotifyConsumerIdsChangedEnable
+     */
     public void unregisterConsumer(final String group, final ClientChannelInfo clientChannelInfo,
         boolean isNotifyConsumerIdsChangedEnable) {
         ConsumerGroupInfo consumerGroupInfo = this.consumerTable.get(group);

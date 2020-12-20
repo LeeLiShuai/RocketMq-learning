@@ -64,16 +64,19 @@ import org.apache.rocketmq.remoting.exception.RemotingTooMuchRequestException;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
 /**
- * netty服务端，用户nameserver和brokerServer接收请求。处理逻辑在requestProcessor中，
+ * netty服务端，用户nameserver和brokerServer接收请求。处理逻辑在serverHandler-->requestProcessor中，
  */
 public class NettyRemotingServer extends NettyRemotingAbstract implements RemotingServer {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
+    //netty相关配置
     private final ServerBootstrap serverBootstrap;
     private final EventLoopGroup eventLoopGroupSelector;
     private final EventLoopGroup eventLoopGroupBoss;
     private final NettyServerConfig nettyServerConfig;
 
+    //线程池
     private final ExecutorService publicExecutor;
+    //netty事件监听器
     private final ChannelEventListener channelEventListener;
 
     private final Timer timer = new Timer("ServerHouseKeepingService", true);

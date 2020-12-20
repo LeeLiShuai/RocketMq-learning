@@ -42,21 +42,26 @@ import org.apache.rocketmq.srvutil.FileWatchService;
 public class NamesrvController {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
+    //nameServer配置
     private final NamesrvConfig namesrvConfig;
 
+    //netty配置
     private final NettyServerConfig nettyServerConfig;
 
+    //定时任务线程池，打印kv配置，检测死亡的broker
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
         "NSScheduledThread"));
+    //kv配置管理类
     private final KVConfigManager kvConfigManager;
+    //路由信息管理类
     private final RouteInfoManager routeInfoManager;
-
+    //netty服务器
     private RemotingServer remotingServer;
-
+    //处理长链接
     private BrokerHousekeepingService brokerHousekeepingService;
-
+    //netty服务器处理请求的逻辑类
     private ExecutorService remotingExecutor;
-
+    //配置
     private Configuration configuration;
     private FileWatchService fileWatchService;
 

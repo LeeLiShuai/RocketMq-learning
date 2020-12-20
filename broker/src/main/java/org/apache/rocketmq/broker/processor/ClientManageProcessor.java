@@ -44,7 +44,7 @@ import org.apache.rocketmq.remoting.netty.AsyncNettyRequestProcessor;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
 /**
- * 客户端信息管理，接收客户端的心跳，注册可用户端，检测客户端配置
+ * 客户端信息管理，接收客户端的心跳，注销用户端，检测客户端配置
  */
 public class ClientManageProcessor extends AsyncNettyRequestProcessor implements NettyRequestProcessor {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
@@ -61,8 +61,10 @@ public class ClientManageProcessor extends AsyncNettyRequestProcessor implements
             // 心跳
             case RequestCode.HEART_BEAT:
                 return this.heartBeat(ctx, request);
+            //注销
             case RequestCode.UNREGISTER_CLIENT:
                 return this.unregisterClient(ctx, request);
+            //检查配置
             case RequestCode.CHECK_CLIENT_CONFIG:
                 return this.checkClientConfig(ctx, request);
             default:
@@ -84,6 +86,7 @@ public class ClientManageProcessor extends AsyncNettyRequestProcessor implements
      */
     public RemotingCommand heartBeat(ChannelHandlerContext ctx, RemotingCommand request) {
         RemotingCommand response = RemotingCommand.createResponseCommand(null);
+        //获取心跳信息
         HeartbeatData heartbeatData = HeartbeatData.decode(request.getBody(), HeartbeatData.class);
         ClientChannelInfo clientChannelInfo = new ClientChannelInfo(
             ctx.channel(),
@@ -91,7 +94,7 @@ public class ClientManageProcessor extends AsyncNettyRequestProcessor implements
             request.getLanguage(),
             request.getVersion()
         );
-
+        //处理消费者信息
         for (ConsumerData data : heartbeatData.getConsumerDataSet()) {
             SubscriptionGroupConfig subscriptionGroupConfig =
                 this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(
@@ -109,7 +112,7 @@ public class ClientManageProcessor extends AsyncNettyRequestProcessor implements
                     subscriptionGroupConfig.getRetryQueueNums(),
                     PermName.PERM_WRITE | PermName.PERM_READ, topicSysFlag);
             }
-
+            //注册消费者，并检查是否有修改
             boolean changed = this.brokerController.getConsumerManager().registerConsumer(
                 data.getGroupName(),
                 clientChannelInfo,
@@ -119,7 +122,6 @@ public class ClientManageProcessor extends AsyncNettyRequestProcessor implements
                 data.getSubscriptionDataSet(),
                 isNotifyConsumerIdsChangedEnable
             );
-
             if (changed) {
                 log.info("registerConsumer info changed {} {}",
                     data.toString(),
@@ -127,7 +129,7 @@ public class ClientManageProcessor extends AsyncNettyRequestProcessor implements
                 );
             }
         }
-
+        //处理生产者
         for (ProducerData data : heartbeatData.getProducerDataSet()) {
             this.brokerController.getProducerManager().registerProducer(data.getGroupName(),
                 clientChannelInfo);
@@ -137,6 +139,13 @@ public class ClientManageProcessor extends AsyncNettyRequestProcessor implements
         return response;
     }
 
+    /**
+     * 处理注销
+     * @param ctx
+     * @param request
+     * @return
+     * @throws RemotingCommandException
+     */
     public RemotingCommand unregisterClient(ChannelHandlerContext ctx, RemotingCommand request)
         throws RemotingCommandException {
         final RemotingCommand response =
@@ -151,6 +160,7 @@ public class ClientManageProcessor extends AsyncNettyRequestProcessor implements
             request.getLanguage(),
             request.getVersion());
         {
+            //注销生产者
             final String group = requestHeader.getProducerGroup();
             if (group != null) {
                 this.brokerController.getProducerManager().unregisterProducer(group, clientChannelInfo);
@@ -158,6 +168,7 @@ public class ClientManageProcessor extends AsyncNettyRequestProcessor implements
         }
 
         {
+            //注销消费者
             final String group = requestHeader.getConsumerGroup();
             if (group != null) {
                 SubscriptionGroupConfig subscriptionGroupConfig =
@@ -175,6 +186,13 @@ public class ClientManageProcessor extends AsyncNettyRequestProcessor implements
         return response;
     }
 
+    /**
+     * 检车客户端配置
+     * @param ctx
+     * @param request
+     * @return
+     * @throws RemotingCommandException
+     */
     public RemotingCommand checkClientConfig(ChannelHandlerContext ctx, RemotingCommand request)
         throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
@@ -183,20 +201,21 @@ public class ClientManageProcessor extends AsyncNettyRequestProcessor implements
             CheckClientRequestBody.class);
 
         if (requestBody != null && requestBody.getSubscriptionData() != null) {
+            //请求里的订阅信息
             SubscriptionData subscriptionData = requestBody.getSubscriptionData();
-
+            //tag模式，返回成功。
             if (ExpressionType.isTagType(subscriptionData.getExpressionType())) {
                 response.setCode(ResponseCode.SUCCESS);
                 response.setRemark(null);
                 return response;
             }
-
+            //非tag模式，即SQL92,如果配置文件不支持，直接返回错误
             if (!this.brokerController.getBrokerConfig().isEnablePropertyFilter()) {
                 response.setCode(ResponseCode.SYSTEM_ERROR);
                 response.setRemark("The broker does not support consumer to filter message by " + subscriptionData.getExpressionType());
                 return response;
             }
-
+            //SQL92相关判断，暂时不太懂
             try {
                 FilterFactory.INSTANCE.get(subscriptionData.getExpressionType()).compile(subscriptionData.getSubString());
             } catch (Exception e) {

@@ -46,12 +46,13 @@ import org.apache.rocketmq.common.sysflag.TopicSysFlag;
 import org.apache.rocketmq.remoting.common.RemotingUtil;
 
 /**
- * 记录路由信息
+ * 管理路由信息
  */
 public class RouteInfoManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
     //broker超时时间，120没有发送心跳包，则将其踢出
     private final static long BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;
+    //读写锁
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     //记录topic信息，topic对应的queue信息
     private final HashMap<String/* topic */, List<QueueData>> topicQueueTable;
@@ -318,6 +319,11 @@ public class RouteInfoManager {
         }
     }
 
+    /**
+     * 取消broker的写权限
+     * @param brokerName
+     * @return
+     */
     public int wipeWritePermOfBrokerByLock(final String brokerName) {
         try {
             try {
@@ -333,6 +339,11 @@ public class RouteInfoManager {
         return 0;
     }
 
+    /**
+     * 取消broker的写权限
+     * @param brokerName
+     * @return
+     */
     private int wipeWritePermOfBroker(final String brokerName) {
         int wipeTopicCnt = 0;
         Iterator<Entry<String, List<QueueData>>> itTopic = this.topicQueueTable.entrySet().iterator();
@@ -355,6 +366,13 @@ public class RouteInfoManager {
         return wipeTopicCnt;
     }
 
+    /**
+     * 注销broker节点
+     * @param clusterName 集群名称
+     * @param brokerAddr  节点地址
+     * @param brokerName  节点名称
+     * @param brokerId    节点ID
+     */
     public void unregisterBroker(
         final String clusterName,
         final String brokerAddr,
@@ -415,6 +433,10 @@ public class RouteInfoManager {
         }
     }
 
+    /**
+     * 根据broker移除topic中的messageQueue
+     * @param brokerName
+     */
     private void removeTopicByBrokerName(final String brokerName) {
         Iterator<Entry<String, List<QueueData>>> itMap = this.topicQueueTable.entrySet().iterator();
         while (itMap.hasNext()) {
@@ -694,6 +716,10 @@ public class RouteInfoManager {
         }
     }
 
+    /**
+     * 获取所有topic
+     * @return
+     */
     public byte[] getSystemTopicList() {
         TopicList topicList = new TopicList();
         try {
@@ -726,6 +752,11 @@ public class RouteInfoManager {
         return topicList.encode();
     }
 
+    /**
+     * 获取集群中的所有topic
+     * @param cluster
+     * @return
+     */
     public byte[] getTopicsByCluster(String cluster) {
         TopicList topicList = new TopicList();
         try {
@@ -783,6 +814,10 @@ public class RouteInfoManager {
         return topicList.encode();
     }
 
+    /**
+     * TODO
+     * @return
+     */
     public byte[] getHasUnitSubTopicList() {
         TopicList topicList = new TopicList();
         try {

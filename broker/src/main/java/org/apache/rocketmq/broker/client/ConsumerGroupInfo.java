@@ -32,16 +32,40 @@ import org.apache.rocketmq.common.protocol.heartbeat.ConsumeType;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 
+/**
+ * 消费者群组信息
+ */
 public class ConsumerGroupInfo {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
+    /**
+     * 群组名称
+     */
     private final String groupName;
+    /**
+     * 每个topic对应的订阅信息
+     */
     private final ConcurrentMap<String/* Topic */, SubscriptionData> subscriptionTable =
         new ConcurrentHashMap<String, SubscriptionData>();
+    /**
+     * netty服务器里channel对应的消费者信息
+     */
     private final ConcurrentMap<Channel, ClientChannelInfo> channelInfoTable =
         new ConcurrentHashMap<Channel, ClientChannelInfo>(16);
+    /**
+     * 消费模式，push还是pull
+     */
     private volatile ConsumeType consumeType;
+    /**
+     * 消息模式，广播还是集群
+     */
     private volatile MessageModel messageModel;
+    /**
+     * 从何处开始消费
+     */
     private volatile ConsumeFromWhere consumeFromWhere;
+    /**
+     * 上次更新时间
+     */
     private volatile long lastUpdateTimestamp = System.currentTimeMillis();
 
     public ConsumerGroupInfo(String groupName, ConsumeType consumeType, MessageModel messageModel,
@@ -80,6 +104,10 @@ public class ConsumerGroupInfo {
         return result;
     }
 
+    /**
+     * 获取当前group里所有客户端
+     * @return
+     */
     public List<String> getAllClientId() {
         List<String> result = new ArrayList<>();
 

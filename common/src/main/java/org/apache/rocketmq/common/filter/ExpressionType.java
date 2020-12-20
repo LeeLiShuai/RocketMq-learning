@@ -49,7 +49,7 @@ public class ExpressionType {
      * (a > 10 AND a < 100) OR (b IS NOT NULL AND b=TRUE)
      * </p>
      */
-    public static final String SQL92 = "SQL92";
+    public static final String SQL92 = "ç";
 
     /**
      * Only support or operation such as

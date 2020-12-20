@@ -20,10 +20,22 @@ package org.apache.rocketmq.common.protocol.body;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
+/**
+ * 检验订阅请求体，由消费者发送到broker
+ */
 public class CheckClientRequestBody extends RemotingSerializable {
 
+    /**
+     * 消费者clientId
+     */
     private String clientId;
+    /**
+     * 消费者所有的group
+     */
     private String group;
+    /**
+     * 消费者订阅信息
+     */
     private SubscriptionData subscriptionData;
 
     public String getClientId() {

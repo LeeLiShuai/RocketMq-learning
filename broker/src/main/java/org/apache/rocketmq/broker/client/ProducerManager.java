@@ -114,6 +114,11 @@ public class ProducerManager {
         }
     }
 
+    /**
+     * 注销生产者
+     * @param group
+     * @param clientChannelInfo
+     */
     public synchronized void unregisterProducer(final String group, final ClientChannelInfo clientChannelInfo) {
         ConcurrentHashMap<Channel, ClientChannelInfo> channelTable = this.groupChannelTable.get(group);
         if (null != channelTable && !channelTable.isEmpty()) {

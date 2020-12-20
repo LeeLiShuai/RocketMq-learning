@@ -52,6 +52,9 @@ import org.apache.rocketmq.remoting.exception.RemotingTooMuchRequestException;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode;
 
+/**
+ * netty服务器的抽象类
+ */
 public abstract class NettyRemotingAbstract {
 
     /**
@@ -61,16 +64,19 @@ public abstract class NettyRemotingAbstract {
 
     /**
      * Semaphore to limit maximum number of on-going one-way requests, which protects system memory footprint.
+     * 限制正在运行的单向请求的数量，防止内存占用过高
      */
     protected final Semaphore semaphoreOneway;
 
     /**
      * Semaphore to limit maximum number of on-going asynchronous requests, which protects system memory footprint.
+     * 限制正在运行的异步请求的数量，防止内存占用过高
      */
     protected final Semaphore semaphoreAsync;
 
     /**
      * This map caches all on-going requests.
+     * 请求id和对应的返回结果
      */
     protected final ConcurrentMap<Integer /* opaque */, ResponseFuture> responseTable =
         new ConcurrentHashMap<Integer, ResponseFuture>(256);
@@ -78,17 +84,20 @@ public abstract class NettyRemotingAbstract {
     /**
      * This container holds all processors per request code, aka, for each incoming request, we may look up the
      * responding processor in this map to handle the request.
+     * 记录每一种请求对应的处理类
      */
     protected final HashMap<Integer/* request code */, Pair<NettyRequestProcessor, ExecutorService>> processorTable =
         new HashMap<Integer, Pair<NettyRequestProcessor, ExecutorService>>(64);
 
     /**
      * Executor to feed netty events to user defined {@link ChannelEventListener}.
+     * netty执行器
      */
     protected final NettyEventExecutor nettyEventExecutor = new NettyEventExecutor();
 
     /**
      * The default request processor to use in case there is no exact match in {@link #processorTable} per request code.
+     * 默认长的处理类
      */
     protected Pair<NettyRequestProcessor, ExecutorService> defaultRequestProcessor;
 
@@ -109,9 +118,9 @@ public abstract class NettyRemotingAbstract {
 
     /**
      * Constructor, specifying capacity of one-way and asynchronous semaphores.
-     *
-     * @param permitsOneway Number of permits for one-way requests.
-     * @param permitsAsync Number of permits for asynchronous requests.
+     * 构造函数
+     * @param permitsOneway Number of permits for one-way requests. 单向的限制数量
+     * @param permitsAsync Number of permits for asynchronous requests.  异步的限制数量
      */
     public NettyRemotingAbstract(final int permitsOneway, final int permitsAsync) {
         this.semaphoreOneway = new Semaphore(permitsOneway, true);
@@ -120,14 +129,14 @@ public abstract class NettyRemotingAbstract {
 
     /**
      * Custom channel event listener.
-     *
+     * 获取事件监听器
      * @return custom channel event listener if defined; null otherwise.
      */
     public abstract ChannelEventListener getChannelEventListener();
 
     /**
      * Put a netty event to the executor.
-     *
+     * 向执行器中添加事件
      * @param event Netty event instance.
      */
     public void putNettyEvent(final NettyEvent event) {
@@ -154,9 +163,11 @@ public abstract class NettyRemotingAbstract {
         final RemotingCommand cmd = msg;
         if (cmd != null) {
             switch (cmd.getType()) {
+                //处理request请求
                 case REQUEST_COMMAND:
                     processRequestCommand(ctx, cmd);
                     break;
+                //处理response请求
                 case RESPONSE_COMMAND:
                     processResponseCommand(ctx, cmd);
                     break;
@@ -185,7 +196,7 @@ public abstract class NettyRemotingAbstract {
 
     /**
      * Process incoming request command issued by remote peer.
-     *
+     * 处理request请求
      * @param ctx channel handler context.
      * @param cmd request command.
      */
@@ -281,7 +292,7 @@ public abstract class NettyRemotingAbstract {
 
     /**
      * Process response from remote peer to the previous issued requests.
-     *
+     * 处理response请求
      * @param ctx channel handler context.
      * @param cmd response command instance.
      */
@@ -379,6 +390,7 @@ public abstract class NettyRemotingAbstract {
     /**
      * <p>
      * This method is periodically invoked to scan and expire deprecated request.
+     * 扫描并处理已超时的请求
      * </p>
      */
     public void scanResponseTable() {
@@ -387,7 +399,7 @@ public abstract class NettyRemotingAbstract {
         while (it.hasNext()) {
             Entry<Integer, ResponseFuture> next = it.next();
             ResponseFuture rep = next.getValue();
-
+            //已超时的请求释放掉
             if ((rep.getBeginTimestamp() + rep.getTimeoutMillis() + 1000) <= System.currentTimeMillis()) {
                 rep.release();
                 it.remove();
