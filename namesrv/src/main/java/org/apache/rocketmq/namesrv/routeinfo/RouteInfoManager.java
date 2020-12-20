@@ -438,9 +438,16 @@ public class RouteInfoManager {
         }
     }
 
+    /**
+     * 根据topic查询路由信息
+     * @param topic
+     * @return
+     */
     public TopicRouteData pickupTopicRouteData(final String topic) {
         TopicRouteData topicRouteData = new TopicRouteData();
+        //是否存在messageQueue
         boolean foundQueueData = false;
+        //是否存在broker
         boolean foundBrokerData = false;
         Set<String> brokerNameSet = new HashSet<String>();
         List<BrokerData> brokerDataList = new LinkedList<BrokerData>();
@@ -451,13 +458,16 @@ public class RouteInfoManager {
 
         try {
             try {
+                //读锁
                 this.lock.readLock().lockInterruptibly();
+                //获取messageQueue信息
                 List<QueueData> queueDataList = this.topicQueueTable.get(topic);
                 if (queueDataList != null) {
                     topicRouteData.setQueueDatas(queueDataList);
                     foundQueueData = true;
 
                     Iterator<QueueData> it = queueDataList.iterator();
+                    //遍历messageQueue，获取broker
                     while (it.hasNext()) {
                         QueueData qd = it.next();
                         brokerNameSet.add(qd.getBrokerName());
@@ -470,6 +480,7 @@ public class RouteInfoManager {
                                 .getBrokerAddrs().clone());
                             brokerDataList.add(brokerDataClone);
                             foundBrokerData = true;
+                            //获取broker的过滤信息
                             for (final String brokerAddr : brokerDataClone.getBrokerAddrs().values()) {
                                 List<String> filterServerList = this.filterServerTable.get(brokerAddr);
                                 filterServerMap.put(brokerAddr, filterServerList);
