@@ -89,6 +89,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     private static final String TLS_HANDLER_NAME = "sslHandler";
     private static final String FILE_REGION_ENCODER_NAME = "fileRegionEncoder";
 
+    //处理逻辑
     // sharable handlers
     private HandshakeHandler handshakeHandler;
     private NettyEncoder encoder;
@@ -185,6 +186,9 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             && Epoll.isAvailable();
     }
 
+    /**
+     * netty服务器启动
+     */
     @Override
     public void start() {
         this.defaultEventExecutorGroup = new DefaultEventExecutorGroup(
@@ -199,8 +203,9 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                 }
             });
 
+        //初始化处理请求的类
         prepareSharableHandlers();
-
+        //初始化netty
         ServerBootstrap childHandler =
             this.serverBootstrap.group(this.eventLoopGroupBoss, this.eventLoopGroupSelector)
                 .channel(useEpoll() ? EpollServerSocketChannel.class : NioServerSocketChannel.class)
@@ -238,10 +243,12 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             throw new RuntimeException("this.serverBootstrap.bind().sync() InterruptedException", e1);
         }
 
+        //启动执行器
         if (this.channelEventListener != null) {
             this.nettyEventExecutor.start();
         }
 
+        //疫苗扫描一次失败的请求
         this.timer.scheduleAtFixedRate(new TimerTask() {
 
             @Override
@@ -355,6 +362,9 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         serverHandler = new NettyServerHandler();
     }
 
+    /**
+     * 处理握手请求
+     */
     @ChannelHandler.Sharable
     class HandshakeHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
@@ -366,6 +376,12 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             this.tlsMode = tlsMode;
         }
 
+        /**
+         * 处理逻辑
+         * @param ctx
+         * @param msg
+         * @throws Exception
+         */
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
 
@@ -418,6 +434,9 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         }
     }
 
+    /**
+     * 处理业务请求
+     */
     @ChannelHandler.Sharable
     class NettyServerHandler extends SimpleChannelInboundHandler<RemotingCommand> {
 
@@ -427,6 +446,9 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         }
     }
 
+    /**
+     * 处理连接请求
+     */
     @ChannelHandler.Sharable
     class NettyConnectManageHandler extends ChannelDuplexHandler {
         @Override

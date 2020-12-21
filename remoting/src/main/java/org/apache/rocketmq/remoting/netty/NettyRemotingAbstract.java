@@ -301,9 +301,8 @@ public abstract class NettyRemotingAbstract {
         final ResponseFuture responseFuture = responseTable.get(opaque);
         if (responseFuture != null) {
             responseFuture.setResponseCommand(cmd);
-
             responseTable.remove(opaque);
-
+            //有回调执行回调，没有释放信号量
             if (responseFuture.getInvokeCallback() != null) {
                 executeInvokeCallback(responseFuture);
             } else {
@@ -418,7 +417,7 @@ public abstract class NettyRemotingAbstract {
     }
 
     /**
-     * 具体发送请求
+     * 处理同步请求
      * @param channel channel
      * @param request  请求
      * @param timeoutMillis  超时时间
@@ -453,7 +452,7 @@ public abstract class NettyRemotingAbstract {
                     log.warn("send a request command to channel <" + addr + "> failed.");
                 }
             });
-            //等待响应结果
+            //等待响应结果，超时报错
             RemotingCommand responseCommand = responseFuture.waitResponse(timeoutMillis);
             if (null == responseCommand) {
                 if (responseFuture.isSendRequestOK()) {
@@ -551,9 +550,20 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
+    /**
+     * 处理单向请求
+     * @param channel
+     * @param request
+     * @param timeoutMillis
+     * @throws InterruptedException
+     * @throws RemotingTooMuchRequestException
+     * @throws RemotingTimeoutException
+     * @throws RemotingSendRequestException
+     */
     public void invokeOnewayImpl(final Channel channel, final RemotingCommand request, final long timeoutMillis)
         throws InterruptedException, RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException {
         request.markOnewayRPC();
+        //获取信号量,添加监听器，执行完成或报错后释放信号量
         boolean acquired = this.semaphoreOneway.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS);
         if (acquired) {
             final SemaphoreReleaseOnlyOnce once = new SemaphoreReleaseOnlyOnce(this.semaphoreOneway);
