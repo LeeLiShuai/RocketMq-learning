@@ -223,6 +223,10 @@ public class MQClientInstance {
         return mqList;
     }
 
+    /**
+     * 启动MQClientInstance TODO
+     * @throws MQClientException
+     */
     public void start() throws MQClientException {
 
         synchronized (this) {
@@ -604,12 +608,20 @@ public class MQClientInstance {
         }
     }
 
+    /**
+     * 更新topic对应的路由信息
+     * @param topic topic名称
+     * @param isDefault  是否默认
+     * @param defaultMQProducer 生产者
+     * @return
+     */
     public boolean updateTopicRouteInfoFromNameServer(final String topic, boolean isDefault,
         DefaultMQProducer defaultMQProducer) {
         try {
             if (this.lockNamesrv.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
                     TopicRouteData topicRouteData;
+                    //默认topic,tipic为TBW102
                     if (isDefault && defaultMQProducer != null) {
                         topicRouteData = this.mQClientAPIImpl.getDefaultTopicRouteInfoFromNameServer(defaultMQProducer.getCreateTopicKey(),
                             1000 * 3);

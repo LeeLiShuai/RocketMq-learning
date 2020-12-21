@@ -25,23 +25,49 @@ import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.StorePathConfigHelper;
 
+/**
+ * 消费队列
+ */
 public class ConsumeQueue {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
+    //每个元素的大小
     public static final int CQ_STORE_UNIT_SIZE = 20;
     private static final InternalLogger LOG_ERROR = InternalLoggerFactory.getLogger(LoggerName.STORE_ERROR_LOGGER_NAME);
 
+    //储存消息的逻辑
     private final DefaultMessageStore defaultMessageStore;
 
+    /**
+     * 内存映射文件
+     */
     private final MappedFileQueue mappedFileQueue;
+    /**
+     * topic
+     */
     private final String topic;
+    /**
+     * queueId
+     */
     private final int queueId;
+    /**
+     * nio操作磁盘文件用到的buffer
+     */
     private final ByteBuffer byteBufferIndex;
 
+    /**
+     * 存储路径
+     */
     private final String storePath;
+    /**
+     * 内存映射文件
+     */
     private final int mappedFileSize;
     private long maxPhysicOffset = -1;
     private volatile long minLogicOffset = 0;
+    /**
+     * 拓展信息
+     */
     private ConsumeQueueExt consumeQueueExt = null;
 
     public ConsumeQueue(

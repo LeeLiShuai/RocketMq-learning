@@ -23,11 +23,18 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.route.QueueData;
 import org.apache.rocketmq.common.protocol.route.TopicRouteData;
 
+/**
+ * topic 信息
+ */
 public class TopicPublishInfo {
+    //是否是顺序topic
     private boolean orderTopic = false;
+    //是否有路由信息
     private boolean haveTopicRouterInfo = false;
+    //对应的messageQueue
     private List<MessageQueue> messageQueueList = new ArrayList<MessageQueue>();
     private volatile ThreadLocalIndex sendWhichQueue = new ThreadLocalIndex();
+    //对应路由信息
     private TopicRouteData topicRouteData;
 
     public boolean isOrderTopic() {
@@ -66,12 +73,20 @@ public class TopicPublishInfo {
         this.haveTopicRouterInfo = haveTopicRouterInfo;
     }
 
+    /**
+     * 选择一个messageQueue
+     * @param lastBrokerName
+     * @return
+     */
     public MessageQueue selectOneMessageQueue(final String lastBrokerName) {
+        //上次使用的broker
         if (lastBrokerName == null) {
             return selectOneMessageQueue();
         } else {
+            //轮训下一个messageQueue
             int index = this.sendWhichQueue.getAndIncrement();
             for (int i = 0; i < this.messageQueueList.size(); i++) {
+                //取模，然后返回
                 int pos = Math.abs(index++) % this.messageQueueList.size();
                 if (pos < 0)
                     pos = 0;

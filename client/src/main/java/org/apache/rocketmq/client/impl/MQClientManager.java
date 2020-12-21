@@ -25,6 +25,9 @@ import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.remoting.RPCHook;
 
+/**
+ * 管理客户端，负责发送接收网络请求。一个jvm进程中只有一个MQClientManager
+ */
 public class MQClientManager {
     private final static InternalLogger log = ClientLogger.getLog();
     private static MQClientManager instance = new MQClientManager();
@@ -45,7 +48,9 @@ public class MQClientManager {
     }
 
     public MQClientInstance getOrCreateMQClientInstance(final ClientConfig clientConfig, RPCHook rpcHook) {
+        //ip@pid(@unitname)
         String clientId = clientConfig.buildMQClientId();
+        //一个进程对应一个instance
         MQClientInstance instance = this.factoryTable.get(clientId);
         if (null == instance) {
             instance =

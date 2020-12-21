@@ -1011,6 +1011,11 @@ public class CommitLog {
 
     }
 
+    /**
+     * 向commitLog中存入消息
+     * @param messageExtBatch
+     * @return
+     */
     public PutMessageResult putMessages(final MessageExtBatch messageExtBatch) {
         messageExtBatch.setStoreTimestamp(System.currentTimeMillis());
         AppendMessageResult result;
