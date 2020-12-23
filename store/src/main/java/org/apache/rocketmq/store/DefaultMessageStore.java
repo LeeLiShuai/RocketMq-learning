@@ -73,7 +73,7 @@ public class DefaultMessageStore implements MessageStore {
     private final CommitLog commitLog;
     //topic对应的comsumeQueue
     private final ConcurrentMap<String/* topic */, ConcurrentMap<Integer/* queueId */, ConsumeQueue>> consumeQueueTable;
-    //刷盘线程服务
+    //consumeQueue刷盘线程服务
     private final FlushConsumeQueueService flushConsumeQueueService;
     //清理commitLog服务
     private final CleanCommitLogService cleanCommitLogService;
@@ -1797,10 +1797,17 @@ public class DefaultMessageStore implements MessageStore {
         }
     }
 
+    /**
+     * 刷盘线程
+     */
     class FlushConsumeQueueService extends ServiceThread {
         private static final int RETRY_TIMES_OVER = 3;
         private long lastFlushTimestamp = 0;
 
+        /**
+         * 刷盘操作
+         * @param retryTimes
+         */
         private void doFlush(int retryTimes) {
             int flushConsumeQueueLeastPages = DefaultMessageStore.this.getMessageStoreConfig().getFlushConsumeQueueLeastPages();
 
@@ -1839,7 +1846,7 @@ public class DefaultMessageStore implements MessageStore {
 
         public void run() {
             DefaultMessageStore.log.info(this.getServiceName() + " service started");
-
+            //定时刷盘
             while (!this.isStopped()) {
                 try {
                     int interval = DefaultMessageStore.this.getMessageStoreConfig().getFlushIntervalConsumeQueue();
