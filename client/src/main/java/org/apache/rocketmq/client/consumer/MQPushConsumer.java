@@ -37,17 +37,26 @@ public interface MQPushConsumer extends MQConsumer {
 
     /**
      * Register the message listener
+     * 注册监听器
      */
     @Deprecated
     void registerMessageListener(MessageListener messageListener);
 
+    /**
+     * 注册并发监听器，普通消息
+     * @param messageListener
+     */
     void registerMessageListener(final MessageListenerConcurrently messageListener);
 
+    /**
+     * 注册顺序徐消息监听器，顺序消息
+     * @param messageListener
+     */
     void registerMessageListener(final MessageListenerOrderly messageListener);
 
     /**
      * Subscribe some topic
-     *
+     *  订阅topic，带有TAG或sql过滤条件
      * @param subExpression subscription expression.it only support or operation such as "tag1 || tag2 || tag3" <br> if
      * null or * expression,meaning subscribe
      * all
@@ -57,7 +66,7 @@ public interface MQPushConsumer extends MQConsumer {
     /**
      * This method will be removed in the version 5.0.0,because filterServer was removed,and method <code>subscribe(final String topic, final MessageSelector messageSelector)</code>
      * is recommended.
-     *
+     * 订阅topic，类模式过滤消息
      * Subscribe some topic
      *
      * @param fullClassName full class name,must extend org.apache.rocketmq.common.filter. MessageFilter
@@ -69,7 +78,7 @@ public interface MQPushConsumer extends MQConsumer {
 
     /**
      * Subscribe some topic with selector.
-     * <p>
+     * <p> 封装上面两个方法
      * This interface also has the ability of {@link #subscribe(String, String)},
      * and, support other message selection, such as {@link org.apache.rocketmq.common.filter.ExpressionType#SQL92}.
      * </p>
@@ -88,7 +97,7 @@ public interface MQPushConsumer extends MQConsumer {
 
     /**
      * Unsubscribe consumption some topic
-     *
+     *  取消订阅
      * @param topic message topic
      */
     void unsubscribe(final String topic);

@@ -48,16 +48,27 @@ import org.apache.rocketmq.common.protocol.body.ConsumeMessageDirectlyResult;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 
+/**
+ * 处理并发消息的服务
+ */
 public class ConsumeMessageConcurrentlyService implements ConsumeMessageService {
     private static final InternalLogger log = ClientLogger.getLog();
+    //消费者实现
     private final DefaultMQPushConsumerImpl defaultMQPushConsumerImpl;
+    //消费者
     private final DefaultMQPushConsumer defaultMQPushConsumer;
+    //消息监听器
     private final MessageListenerConcurrently messageListener;
+    //消息请求队列
     private final BlockingQueue<Runnable> consumeRequestQueue;
+    //线程池
     private final ThreadPoolExecutor consumeExecutor;
+    //消费组
     private final String consumerGroup;
 
+    //任务调度线程池
     private final ScheduledExecutorService scheduledExecutorService;
+    //清理过期消息线程池
     private final ScheduledExecutorService cleanExpireMsgExecutors;
 
     public ConsumeMessageConcurrentlyService(DefaultMQPushConsumerImpl defaultMQPushConsumerImpl,
@@ -77,6 +88,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             this.consumeRequestQueue,
             new ThreadFactoryImpl("ConsumeMessageThread_"));
 
+        //单个线程的线程池
         this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("ConsumeMessageScheduledThread_"));
         this.cleanExpireMsgExecutors = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("CleanExpireMsgScheduledThread_"));
     }

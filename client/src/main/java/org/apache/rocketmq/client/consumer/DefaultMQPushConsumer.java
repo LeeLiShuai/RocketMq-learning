@@ -66,6 +66,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
 
     /**
      * Internal implementation. Most of the functions herein are delegated to it.
+     * 实现类
      */
     protected final transient DefaultMQPushConsumerImpl defaultMQPushConsumerImpl;
 
@@ -73,7 +74,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * Consumers of the same role is required to have exactly same subscriptions and consumerGroup to correctly achieve
      * load balance. It's required and needs to be globally unique.
      * </p>
-     *
+     *  消费组
      * See <a href="http://rocketmq.apache.org/docs/core-concept/">here</a> for further discussion.
      */
     private String consumerGroup;
@@ -87,7 +88,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * balances; Conversely, if the broadcasting is set, each consumer client will consume all subscribed messages
      * separately.
      * </p>
-     *
+     * 消费模式，默认集群模式，可选广播模式
      * This field defaults to clustering.
      */
     private MessageModel messageModel = MessageModel.CLUSTERING;
@@ -122,6 +123,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * messages born prior to {@link #consumeTimestamp} will be ignored
      * </li>
      * </ul>
+     * 根据消费进度拉取不到消息时，从哪里开始重新拉取；可选嘟列最大偏移量。最下偏移量，启动时间戳
      */
     private ConsumeFromWhere consumeFromWhere = ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET;
 
@@ -130,61 +132,70 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * 20131223171201<br>
      * Implying Seventeen twelve and 01 seconds on December 23, 2013 year<br>
      * Default backtracking consumption time Half an hour ago.
+     *
      */
     private String consumeTimestamp = UtilAll.timeMillisToHumanString3(System.currentTimeMillis() - (1000 * 60 * 30));
 
     /**
      * Queue allocation algorithm specifying how message queues are allocated to each consumer clients.
+     * 集群模式负载均衡策略
      */
     private AllocateMessageQueueStrategy allocateMessageQueueStrategy;
 
     /**
      * Subscription relationship
+     * 订阅关系
      */
     private Map<String /* topic */, String /* sub expression */> subscription = new HashMap<String, String>();
 
     /**
      * Message listener
+     * 监听器
      */
     private MessageListener messageListener;
 
     /**
      * Offset Storage
+     * 消费进度存储
      */
     private OffsetStore offsetStore;
 
     /**
      * Minimum consumer thread number
+     * 最小线程数
      */
     private int consumeThreadMin = 20;
 
     /**
      * Max consumer thread number
+     * 最大线程数
      */
     private int consumeThreadMax = 20;
 
     /**
      * Threshold for dynamic adjustment of the number of thread pool
+     * 调整线程池线程数量的阈值
      */
     private long adjustThreadPoolNumsThreshold = 100000;
 
     /**
      * Concurrently max span offset.it has no effect on sequential consumption
+     * 并发消息消费时处理队列最大跨度。如果消息处理队列中偏移量最大的消息与最小的消息的跨度如果超过此值，则延迟50ms再拉取消息
      */
     private int consumeConcurrentlyMaxSpan = 2000;
 
     /**
      * Flow control threshold on queue level, each message queue will cache at most 1000 messages by default,
      * Consider the {@code pullBatchSize}, the instantaneous value may exceed the limit
+     * 拉取消息的阈值
      */
     private int pullThresholdForQueue = 1000;
 
     /**
      * Limit the cached message size on queue level, each message queue will cache at most 100 MiB messages by default,
      * Consider the {@code pullBatchSize}, the instantaneous value may exceed the limit
-     *
-     * <p>
      * The size of a message only measured by message body, so it's not accurate
+     * 队列里消息大小的阈值
      */
     private int pullThresholdSizeForQueue = 100;
 
@@ -196,6 +207,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * <p>
      * For example, if the value of pullThresholdForTopic is 1000 and 10 message queues are assigned to this consumer,
      * then pullThresholdForQueue will be set to 100
+     * topic级别的阈值，除以queue的数量得到拉取每个queue时的阈值
      */
     private int pullThresholdForTopic = -1;
 
@@ -207,21 +219,25 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * <p>
      * For example, if the value of pullThresholdSizeForTopic is 1000 MiB and 10 message queues are
      * assigned to this consumer, then pullThresholdSizeForQueue will be set to 100 MiB
+     * 主题级别的大小阈值
      */
     private int pullThresholdSizeForTopic = -1;
 
     /**
      * Message pull Interval
+     * push模式时的拉取间隔
      */
     private long pullInterval = 0;
 
     /**
      * Batch consumption size
+     * 每次传入监听器消费方法的消息条数
      */
     private int consumeMessageBatchMaxSize = 1;
 
     /**
      * Batch pull size
+     * 每次拉取消息的条数
      */
     private int pullBatchSize = 32;
 
@@ -241,21 +257,25 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      *
      * If messages are re-consumed more than {@link #maxReconsumeTimes} before success, it's be directed to a deletion
      * queue waiting.
+     * 最大重试次数
      */
     private int maxReconsumeTimes = -1;
 
     /**
      * Suspending pulling time for cases requiring slow pulling like flow-control scenario.
+     * 延迟将队列消息调教到消费者线程的等待时间
      */
     private long suspendCurrentQueueTimeMillis = 1000;
 
     /**
      * Maximum amount of time in minutes a message may block the consuming thread.
+     * 消息消费超时时间
      */
     private long consumeTimeout = 15;
 
     /**
      * Interface of asynchronous transfer data
+     * 记录消息轨迹
      */
     private TraceDispatcher traceDispatcher = null;
 
@@ -686,11 +706,14 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * This method gets internal infrastructure readily to serve. Instances must call this method after configuration.
      *
      * @throws MQClientException if there is any client error.
+     * 消费者启动的方法，设置完属性之后，调用start方法
      */
     @Override
     public void start() throws MQClientException {
         setConsumerGroup(NamespaceUtil.wrapNamespace(this.getNamespace(), this.consumerGroup));
+        //调用实现类的start方法
         this.defaultMQPushConsumerImpl.start();
+        //TODO 消息轨迹
         if (null != traceDispatcher) {
             try {
                 traceDispatcher.start(this.getNamesrvAddr(), this.getAccessChannel());
