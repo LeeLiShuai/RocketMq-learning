@@ -57,7 +57,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
     private final DefaultMQPushConsumerImpl defaultMQPushConsumerImpl;
     //消费者
     private final DefaultMQPushConsumer defaultMQPushConsumer;
-    //消息监听器
+    //消息监听器，
     private final MessageListenerConcurrently messageListener;
     //消息请求队列
     private final BlockingQueue<Runnable> consumeRequestQueue;
@@ -176,6 +176,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         log.info("consumeMessageDirectly receive new message: {}", msg);
 
         try {
+            //由具体的调用者实现，rocketmq-spring由实现，遍历消息，调用消费逻辑，报错返回RECONSUME_LATER,成功返回CONSUME_SUCCESS
             ConsumeConcurrentlyStatus status = this.messageListener.consumeMessage(msgs, context);
             if (status != null) {
                 switch (status) {
@@ -259,6 +260,12 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         }
     }
 
+    /**
+     * 根据消费结果处理回调
+     * @param status
+     * @param context
+     * @param consumeRequest
+     */
     public void processConsumeResult(
         final ConsumeConcurrentlyStatus status,
         final ConsumeConcurrentlyContext context,
@@ -368,6 +375,9 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         }, 5000, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * 消费请求，包含若干拉取到的消息
+     */
     class ConsumeRequest implements Runnable {
         private final List<MessageExt> msgs;
         private final ProcessQueue processQueue;
@@ -387,6 +397,9 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             return processQueue;
         }
 
+        /**
+         * 消费逻辑
+         */
         @Override
         public void run() {
             if (this.processQueue.isDropped()) {
@@ -420,6 +433,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                         MessageAccessor.setConsumeStartTimeStamp(msg, String.valueOf(System.currentTimeMillis()));
                     }
                 }
+                //消费消息,由具体的调用者实现，rocketmq-spring由实现，遍历消息，调用消费逻辑，报错返回RECONSUME_LATER,成功返回CONSUME_SUCCESS
                 status = listener.consumeMessage(Collections.unmodifiableList(msgs), context);
             } catch (Throwable e) {
                 log.warn("consumeMessage exception: {} Group: {} Msgs: {} MQ: {}",

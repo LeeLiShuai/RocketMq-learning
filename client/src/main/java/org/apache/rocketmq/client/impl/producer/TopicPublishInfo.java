@@ -83,7 +83,7 @@ public class TopicPublishInfo {
         if (lastBrokerName == null) {
             return selectOneMessageQueue();
         } else {
-            //轮训下一个messageQueue
+            //轮询下一个messageQueue
             int index = this.sendWhichQueue.getAndIncrement();
             for (int i = 0; i < this.messageQueueList.size(); i++) {
                 //取模，然后返回
